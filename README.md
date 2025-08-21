@@ -158,7 +158,20 @@ Snapshots are stored as JSON files with the following structure:
         "connection": "keep-alive",
         "server": "nginx/1.18.0"
       },
-      "body": "{\n  \"users\": [\n    {\n      \"id\": 1,\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\"\n    }\n  ]\n}"
+      "body": {
+        "users": [
+          {
+            "id": 1,
+            "name": "John Doe",
+            "email": "john@example.com"
+          },
+          {
+            "id": 2,
+            "name": "Jane Smith",
+            "email": "jane@example.com"
+          }
+        ]
+      }
     }
   }
 ]

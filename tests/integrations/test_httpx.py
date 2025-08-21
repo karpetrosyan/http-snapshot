@@ -1,3 +1,4 @@
+from typing import Any
 import httpx
 import inline_snapshot
 import pytest
@@ -25,9 +26,9 @@ async def test_basic_snapshot(snapshot_httpx_client: httpx.AsyncClient) -> None:
     ],
 )
 async def test_with_excluded_request_header(
-    snapshot_httpx_client: httpx.AsyncClient, http_snapshot_serializer_options
+    snapshot_httpx_client: httpx.AsyncClient, http_snapshot_serializer_options: Any
 ) -> None:
     await snapshot_httpx_client.get(
-        "https://hishel.com",
+        "https://jsonplaceholder.typicode.com/todos/1",
         headers={"X-Secret-Key": "secret"},
     )

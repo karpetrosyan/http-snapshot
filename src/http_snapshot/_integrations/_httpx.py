@@ -4,7 +4,7 @@ from typing import Any, overload
 import httpx
 from inline_snapshot import Snapshot
 
-from .._models import Request, Response
+from .._models import Headers, Request, Response
 from .._serializer import snapshot_to_internal
 from .._typing import assert_never
 
@@ -28,14 +28,14 @@ def httpx_to_internal(
         return Request(
             method=model.method,
             url=str(model.url),
-            headers=dict(model.headers),
+            headers=Headers(model.headers),
             body=model.content,
         )
     elif isinstance(model, httpx.Response):
         model.aiter_bytes
         return Response(
             status_code=model.status_code,
-            headers=dict(model.headers),
+            headers=Headers(model.headers),
             body=model.content,
         )
     else:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 import json
 from typing import Any, Iterable, Mapping, Optional
@@ -5,7 +7,7 @@ import inline_snapshot
 import pytest
 import base64
 
-from ._models import Request, Response
+from ._models import Headers, Request, Response
 
 
 @dataclass
@@ -24,7 +26,7 @@ class SnapshotSerializerOptions:
 
 
 def get_snapshot_value(snapshot: Any) -> Any:
-    # todo fix this
+    # TODO: fix this
     return snapshot._load_value()
     if not hasattr(snapshot, "_old_value"):
         return snapshot
@@ -37,9 +39,9 @@ def get_snapshot_value(snapshot: Any) -> Any:
     return loader() if loader else old.value
 
 
-def encode_content(content: bytes, content_type: str) -> str:
-    if content_type == "application/json":
-        return json.dumps(json.loads(content), indent=2, ensure_ascii=False)
+def encode_content(content: bytes, content_type: str) -> str | dict[str, Any]:
+    if "application/json" in content_type:
+        return json.loads(content)  # type: ignore[no-any-return]
     elif content_type.startswith("text/"):
         return content.decode("utf-8")
     else:
@@ -47,14 +49,18 @@ def encode_content(content: bytes, content_type: str) -> str:
         return base64.b64encode(content).decode("utf-8")
 
 
-def decode_content(encoded_content: str, content_type: str) -> bytes:
-    if content_type == "application/json":
-        return json.dumps(
-            json.loads(encoded_content), indent=2, ensure_ascii=False
-        ).encode("utf-8")
+def decode_content(encoded_content: str | dict[str, Any], content_type: str) -> bytes:
+    if "application/json" in content_type:
+        return json.dumps(encoded_content).encode("utf-8")
     elif content_type.startswith("text/"):
+        assert isinstance(encoded_content, str), (
+            "Expected encoded content to be a string for text content"
+        )
         return encoded_content.encode("utf-8")
     else:
+        assert isinstance(encoded_content, str), (
+            "Expected encoded content to be a string for binary content"
+        )
         # decode base64 for other binary content
         return base64.b64decode(encoded_content)
 
@@ -136,12 +142,13 @@ def snapshot_to_internal(
 
     value: list[dict[str, Any]] = get_snapshot_value(snapshot)
     for item in value:
+        headers = Headers(item["response"]["headers"])
         response = Response(
             status_code=item["response"]["status_code"],
-            headers=item["response"]["headers"],
+            headers=headers,
             body=decode_content(
                 item["response"]["body"],
-                item["response"]["headers"].get("Content-Type", ""),
+                headers.get("Content-Type", ""),
             ),
         )
         responses.append(response)

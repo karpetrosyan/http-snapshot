@@ -4,7 +4,7 @@ from typing import Any, Mapping, overload
 from inline_snapshot import Snapshot
 from requests.adapters import HTTPAdapter
 from requests.models import PreparedRequest, Response
-from http_snapshot._models import Request, Response as InternalResponse
+from http_snapshot._models import Headers, Request, Response as InternalResponse
 from http_snapshot._serializer import snapshot_to_internal
 from urllib3.util.retry import Retry as Retry
 from http_snapshot._typing import assert_never
@@ -33,10 +33,11 @@ def requests_to_internal(
             body = body
         else:
             body = b""
+        assert model.method
         return Request(
             method=model.method,
             url=str(model.url),
-            headers=dict(model.headers),
+            headers=Headers(model.headers),
             body=body,
         )
     elif isinstance(model, Response):
@@ -47,7 +48,7 @@ def requests_to_internal(
             )
         return InternalResponse(
             status_code=model.status_code,
-            headers=dict(model.headers),
+            headers=Headers(model.headers),
             body=content,
         )
     else:

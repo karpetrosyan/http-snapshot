@@ -10,12 +10,12 @@ from ._serializer import SnapshotSerializerOptions, internal_to_snapshot
 try:
     import httpx
 except ImportError:
-    httpx: Any = None
+    httpx: Any = None  # type: ignore[no-redef]
 
 try:
     import requests
 except ImportError:
-    requests: Any = None
+    requests: Any = None  # type: ignore[no-redef]
 
 
 def is_live() -> bool:
