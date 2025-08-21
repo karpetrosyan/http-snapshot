@@ -1,0 +1,32 @@
+[project]
+name = "http-snapshot"
+version = "0.1.1"
+description = "http-snapshot is a pytest plugin that snapshots requests made with popular Python HTTP clients."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["inline-snapshot>=0.27.2"]
+
+
+[dependency-groups]
+dev = [
+    "anyio>=4.10.0",
+    "httpx>=0.28.1",
+    "inline-snapshot>=0.27.2",
+    "mypy>=1.17.1",
+    "pytest>=8.4.1",
+    "ruff>=0.12.10",
+    "types-requests>=2.32.4.20250809",
+]
+
+[tool.mypy]
+strict = true
+
+[project.entry-points.pytest11]
+http_snapshot = "http_snapshot._pytest_plugin"
+
+[project.optional-dependencies]
+httpx = ["httpx>=0.28.1"]
+requests = ["requests>=2.32.5"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
