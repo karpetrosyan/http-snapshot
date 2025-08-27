@@ -13,6 +13,7 @@ dev = [
     "httpx>=0.28.1",
     "inline-snapshot>=0.28.0",
     "mypy>=1.17.1",
+    "pyright>=1.1.404",
     "pytest>=8.4.1",
     "ruff>=0.12.10",
     "types-requests>=2.32.4.20250809",
