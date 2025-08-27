@@ -30,7 +30,7 @@ def requests_to_internal(
         if isinstance(model.body, str):
             body = model.body.encode("utf-8")
         elif isinstance(model.body, bytes):
-            body = body
+            body = model.body
         else:
             body = b""
         assert model.method

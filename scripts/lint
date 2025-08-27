@@ -12,4 +12,4 @@ echo "==> Running mypy"
 uv run mypy src tests
 
 echo "==> Making sure it imports"
-uv run python -c 'import {{ project_name }}'
+uv run python -c 'import http_snapshot'
