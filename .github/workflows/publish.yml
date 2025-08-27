@@ -70,20 +70,22 @@ jobs:
       - name: Set up Python (using uv)
         run: uv python install
 
-      - name: Prepare release notes
-        run: uv tool run git-changelog --release-notes > release-notes.md
-
       - name: Download packages
         uses: actions/download-artifact@v4
         with:
           name: dist
 
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: release-notes.md
+          GITHUB_REPO: ${{ github.repository }}
+
       - name: Create release with assets
         uses: softprops/action-gh-release@v2
         with:
           files: ./dist/*
-
-      - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
           body_path: release-notes.md
