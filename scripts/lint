@@ -1,0 +1,13 @@
+#!/usr/bin/env bash -ex
+
+echo "==> Running ruff"
+uv run ruff check src tests
+
+echo "==> Running pyright"
+uv run pyright src tests
+
+echo "==> Running mypy"
+uv run mypy src tests
+
+echo "==> Making sure it imports"
+uv run python -c 'import {{ project_name }}'
