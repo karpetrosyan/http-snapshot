@@ -4,7 +4,7 @@
 
 ## Features
 
-- 🚀 **Support for multiple HTTP clients**: `httpx` (async) and `requests` (sync)
+- 🚀 **Support for multiple HTTP clients**: `httpx` (async, sync) and `requests` (sync)
 - 📸 **Automatic HTTP interaction capture**: Records both requests and responses
 - 🔒 **Security-aware**: Automatically excludes sensitive headers like authorization and cookies
 - ⚙️ **Configurable**: Control what gets captured and what gets excluded
@@ -44,9 +44,28 @@ import inline_snapshot
     "http_snapshot",
     [inline_snapshot.external("uuid:my-test-snapshot.json")],
 )
-async def test_api_call(snapshot_httpx_client: httpx.AsyncClient) -> None:
+async def test_api_call(snapshot_async_httpx_client: httpx.AsyncClient) -> None:
     # This will be captured on first run, replayed on subsequent runs
-    response = await snapshot_httpx_client.get("https://api.example.com/users")
+    response = await snapshot_async_httpx_client.get("https://api.example.com/users")
+    assert response.status_code == 200
+    assert "users" in response.json()
+```
+
+### Using with httpx (sync)
+
+```python
+import httpx
+import pytest
+import inline_snapshot
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "http_snapshot",
+    [inline_snapshot.external("uuid:my-test-snapshot.json")],
+)
+def test_api_call(snapshot_sync_httpx_client: httpx.Client) -> None:
+    # This will be captured on first run, replayed on subsequent runs
+    response = snapshot_async_httpx_client.get("https://api.example.com/users")
     assert response.status_code == 200
     assert "users" in response.json()
 ```
@@ -71,18 +90,9 @@ def test_api_call(snapshot_requests_session: requests.Session) -> None:
 
 ## How It Works
 
-### Live Mode vs Replay Mode
-
-The plugin operates in two modes:
-
-1. **Live Mode**: When `HTTP_SNAPSHOT_LIVE=1` is set, actual HTTP requests are made and responses are captured
-2. **Replay Mode**: When not in live mode, previously captured responses are replayed
-
-### Running in Live Mode
-
 ```bash
-# Capture new snapshots
-HTTP_SNAPSHOT_LIVE=1 pytest tests/
+# Capture new snapshots by running pytest with --inline snapshot=create or --inline snapshot=fix.
+pytest tests/ --inline-snapshot=create,fix
 
 # Replay existing snapshots (default)
 pytest tests/
@@ -195,9 +205,9 @@ The plugin intelligently handles different content types:
     "http_snapshot",
     [inline_snapshot.external("uuid:multi-request-test.json")],
 )
-async def test_multiple_requests(snapshot_httpx_client: httpx.AsyncClient) -> None:
+async def test_multiple_requests(snapshot_async_httpx_client: httpx.AsyncClient) -> None:
     # Create a user
-    create_response = await snapshot_httpx_client.post(
+    create_response = await snapshot_async_httpx_client.post(
         "https://api.example.com/users",
         json={"name": "Alice", "email": "alice@example.com"}
     )
@@ -205,7 +215,7 @@ async def test_multiple_requests(snapshot_httpx_client: httpx.AsyncClient) -> No
     user_id = create_response.json()["id"]
 
     # Fetch the user
-    get_response = await snapshot_httpx_client.get(
+    get_response = await snapshot_async_httpx_client.get(
         f"https://api.example.com/users/{user_id}"
     )
     assert get_response.status_code == 200
@@ -240,4 +250,3 @@ def test_authenticated_request(
 
 1. **Exclude sensitive data**: Always exclude headers containing secrets, tokens, or personal data
 2. **Review snapshots**: Check generated snapshot files into version control and review changes
-3. **Use live mode sparingly**: Only run in live mode when you need to update snapshots

@@ -25,20 +25,6 @@ class SnapshotSerializerOptions:
         )
 
 
-def get_snapshot_value(snapshot: Any) -> Any:
-    # TODO: fix this
-    return snapshot._load_value()
-    if not hasattr(snapshot, "_old_value"):
-        return snapshot
-
-    old = snapshot._old_value
-    if not hasattr(old, "value"):
-        return old
-
-    loader = getattr(old.value, "_load_value", None)
-    return loader() if loader else old.value
-
-
 def encode_content(content: bytes, content_type: str) -> str | dict[str, Any]:
     if "application/json" in content_type:
         return json.loads(content)  # type: ignore[no-any-return]
@@ -140,7 +126,13 @@ def snapshot_to_internal(
 ) -> list[Response]:
     responses = []
 
-    value: list[dict[str, Any]] = get_snapshot_value(snapshot)
+    value = inline_snapshot.get_snapshot_value(snapshot)
+
+    if value is None:
+        raise RuntimeError(
+            "Snapshot value was not found. Create it first using the inline snapshot create option."
+        )
+
     for item in value:
         headers = Headers(item["response"]["headers"])
         response = Response(

@@ -50,7 +50,7 @@ def internal_to_httpx(model: Response) -> httpx.Response:
     )
 
 
-class SnapshotTransport(httpx.AsyncBaseTransport):
+class AsyncSnapshotTransport(httpx.AsyncBaseTransport, httpx.BaseTransport):
     def __init__(
         self,
         next_transport: httpx.AsyncBaseTransport,
@@ -70,6 +70,35 @@ class SnapshotTransport(httpx.AsyncBaseTransport):
             # In live mode, we would normally send the request to the server.
             response = await self.next_transport.handle_async_request(request)
             await response.aread()
+            self.collected_pairs.append(
+                (httpx_to_internal(request), httpx_to_internal(response))
+            )
+        else:
+            internal = snapshot_to_internal(self.snapshot)
+            response = internal_to_httpx(internal[self._request_number])
+        return response
+
+
+class SyncSnapshotTransport(httpx.AsyncBaseTransport, httpx.BaseTransport):
+    def __init__(
+        self,
+        next_transport: httpx.BaseTransport,
+        snapshot: Snapshot[list[dict[str, Any]]],
+        is_live: bool,
+    ) -> None:
+        self.is_live = is_live
+        self.next_transport = next_transport
+        self.collected_pairs: list[tuple[Request, Response]] = []
+        self.snapshot = snapshot
+        self._request_number = -1
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        self._request_number += 1
+
+        if self.is_live:
+            # In live mode, we would normally send the request to the server.
+            response = self.next_transport.handle_request(request)
+            response.read()
             self.collected_pairs.append(
                 (httpx_to_internal(request), httpx_to_internal(response))
             )
