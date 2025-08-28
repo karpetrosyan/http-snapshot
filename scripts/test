@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -ex
 
-set -e
-
-uv run --all-extras pytest tests "$@"
+echo "==> Running tests"
+uv run pytest --cov=./ --cov-report=xml tests "$@"
