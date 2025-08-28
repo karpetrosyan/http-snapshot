@@ -1,6 +1,4 @@
-#!/usr/bin/env bash
-
-set -e
+#!/usr/bin/env bash -ex
 
 echo "==> Running ruff"
 uv run ruff check --fix src tests

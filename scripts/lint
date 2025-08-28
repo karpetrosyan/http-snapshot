@@ -1,15 +1,13 @@
-#!/usr/bin/env bash
-
-set -e
+#!/usr/bin/env bash -ex
 
 echo "==> Running ruff"
-uv run --all-extras ruff check src tests
+uv run ruff check src tests
 
 echo "==> Running pyright"
-uv run --all-extras  pyright src tests
+uv run pyright src tests
 
 echo "==> Running mypy"
-uv run --all-extras  mypy src tests
+uv run mypy src tests
 
 echo "==> Making sure it imports"
-uv run --with-editable . python -c 'import http_snapshot'
+uv run python -c 'import '
