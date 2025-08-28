@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  test:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
@@ -42,3 +42,18 @@ jobs:
 
       - name: Run tests
         run: scripts/test
+
+      - name: Upload Coverage
+        uses: coverallsapp/github-action@v2
+        with:
+          parallel: true
+          file: coverage.xml
+  coveralls:
+    name: Finish Coveralls
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Finished
+        uses: coverallsapp/github-action@v2
+        with:
+          parallel-finished: true
