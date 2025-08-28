@@ -43,12 +43,8 @@ jobs:
       - name: Run tests
         run: scripts/test
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Upload Coverage
+        uses: coverallsapp/github-action@v2
         with:
-          name: codecov-umbrella
-          directory: ./coverage/reports/
-          fail_ci_if_error: true
-          flags: unittests
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
+          parallel: true
+          file: coverage.xml
