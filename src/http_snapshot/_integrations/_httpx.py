@@ -55,9 +55,9 @@ class AsyncSnapshotTransport(httpx.AsyncBaseTransport, httpx.BaseTransport):
         self,
         next_transport: httpx.AsyncBaseTransport,
         snapshot: Snapshot[list[dict[str, Any]]],
-        is_live: bool,
+        is_recording: bool,
     ) -> None:
-        self.is_live = is_live
+        self.is_recording = is_recording
         self.next_transport = next_transport
         self.collected_pairs: list[tuple[Request, Response]] = []
         self.snapshot = snapshot
@@ -66,7 +66,7 @@ class AsyncSnapshotTransport(httpx.AsyncBaseTransport, httpx.BaseTransport):
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         self._request_number += 1
 
-        if self.is_live:
+        if self.is_recording:
             # In live mode, we would normally send the request to the server.
             response = await self.next_transport.handle_async_request(request)
             await response.aread()
@@ -84,9 +84,9 @@ class SyncSnapshotTransport(httpx.AsyncBaseTransport, httpx.BaseTransport):
         self,
         next_transport: httpx.BaseTransport,
         snapshot: Snapshot[list[dict[str, Any]]],
-        is_live: bool,
+        is_recording: bool,
     ) -> None:
-        self.is_live = is_live
+        self.is_recording = is_recording
         self.next_transport = next_transport
         self.collected_pairs: list[tuple[Request, Response]] = []
         self.snapshot = snapshot
@@ -95,7 +95,7 @@ class SyncSnapshotTransport(httpx.AsyncBaseTransport, httpx.BaseTransport):
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         self._request_number += 1
 
-        if self.is_live:
+        if self.is_recording:
             # In live mode, we would normally send the request to the server.
             response = self.next_transport.handle_request(request)
             response.read()

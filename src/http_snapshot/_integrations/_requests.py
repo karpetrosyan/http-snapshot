@@ -81,11 +81,11 @@ class SnapshotAdapter(HTTPAdapter):
         pool_maxsize: int = 10,
         max_retries: Retry | int | None = 0,
         pool_block: bool = False,
-        is_live: bool = False,
+        is_recording: bool = False,
     ) -> None:
         super().__init__(pool_connections, pool_maxsize, max_retries, pool_block)
         self.snapshot = snapshot
-        self.is_live = is_live
+        self.is_recording = is_recording
         self.collected_pairs: list[tuple[Request, InternalResponse]] = []
         self._request_number = -1
 
@@ -100,7 +100,7 @@ class SnapshotAdapter(HTTPAdapter):
     ) -> Response:
         self._request_number += 1
 
-        if self.is_live:
+        if self.is_recording:
             response = super().send(request, False, timeout, verify, cert, proxies)
             self.collected_pairs.append(
                 (requests_to_internal(request), requests_to_internal(response))

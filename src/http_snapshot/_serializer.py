@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
 from typing import Any, Iterable, Mapping, Optional
 import inline_snapshot
@@ -10,18 +9,19 @@ import base64
 from ._models import Headers, Request, Response
 
 
-@dataclass
 class SnapshotSerializerOptions:
-    include_request: bool = True
-    exclude_request_headers: Iterable[str] = field(default_factory=list)
-    exclude_response_headers: Iterable[str] = field(default_factory=list)
-
-    def __post_init__(self) -> None:
+    def __init__(
+        self,
+        include_request: bool = False,
+        exclude_request_headers: Iterable[str] = (),
+        exclude_response_headers: Iterable[str] = (),
+    ) -> None:
+        self.include_request = include_request
         self.exclude_request_headers = set(
-            header.lower() for header in self.exclude_request_headers
+            header.lower() for header in exclude_request_headers
         )
         self.exclude_response_headers = set(
-            header.lower() for header in self.exclude_response_headers
+            header.lower() for header in exclude_response_headers
         )
 
 
