@@ -1,3 +1,8 @@
+## [0.1.6] - 2025-12-16
+
+### 🐛 Bug Fixes
+
+- Add `py.typed` to fix typing
 ## [0.1.5] - 2025-12-16
 
 ### 🚀 Features
