@@ -91,10 +91,13 @@ def test_api_call(snapshot_requests_session: requests.Session) -> None:
 ## How It Works
 
 ```bash
-# Capture new snapshots by running pytest with --inline snapshot=create or --inline snapshot=fix.
-pytest tests/ --inline-snapshot=create,fix
+# Record new HTTP interactions (makes actual network calls and creates snapshots)
+pytest tests/ --http-record --inline-snapshot=create
 
-# Replay existing snapshots (default)
+# Re-record and update existing snapshots (makes actual network calls and updates snapshots)
+pytest tests/ --http-record --inline-snapshot=fix
+
+# Replay existing snapshots (default - no network calls made)
 pytest tests/
 ```
 
