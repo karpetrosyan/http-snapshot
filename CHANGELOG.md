@@ -1,3 +1,8 @@
+## [0.1.5] - 2025-12-16
+
+### 🚀 Features
+
+- Add `SnapshotSerializerOptions` into the public API
 ## [0.1.4] - 2025-12-03
 
 ### 🚜 Refactor
