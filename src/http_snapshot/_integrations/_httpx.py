@@ -78,6 +78,9 @@ class AsyncSnapshotTransport(httpx.AsyncBaseTransport, httpx.BaseTransport):
             response = internal_to_httpx(internal[self._request_number])
         return response
 
+    async def aclose(self) -> None:
+        await self.next_transport.aclose()
+
 
 class SyncSnapshotTransport(httpx.AsyncBaseTransport, httpx.BaseTransport):
     def __init__(
@@ -106,3 +109,6 @@ class SyncSnapshotTransport(httpx.AsyncBaseTransport, httpx.BaseTransport):
             internal = snapshot_to_internal(self.snapshot)
             response = internal_to_httpx(internal[self._request_number])
         return response
+
+    def close(self) -> None:
+        self.next_transport.close()

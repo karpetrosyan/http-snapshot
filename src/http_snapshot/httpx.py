@@ -5,8 +5,13 @@ except ImportError:
         "httpx is not installed. Please install http-snapshot with httpx feature [pip install http-snapshot[httpx]]"
     )
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 import inline_snapshot
+
+
+if TYPE_CHECKING:
+    from http_snapshot._integrations._httpx import AsyncSnapshotTransport
+    from http_snapshot._integrations._httpx import SyncSnapshotTransport
 
 from ._serializer import SnapshotSerializerOptions, internal_to_snapshot
 
@@ -30,7 +35,7 @@ class HttpxAsyncSnapshotClient:
         self.serializer_options = serializer_options or SnapshotSerializerOptions()
         self.base_transport = base_transport or httpx.AsyncHTTPTransport()
         self._client: Optional[httpx.AsyncClient] = None
-        self._transport: Optional[Any] = None
+        self._transport: Optional["AsyncSnapshotTransport"] = None
 
     async def __aenter__(self) -> httpx.AsyncClient:
         from ._integrations._httpx import AsyncSnapshotTransport
@@ -59,6 +64,7 @@ class HttpxAsyncSnapshotClient:
                 await self._client.aclose()
             if self._transport:
                 await self._transport.aclose()
+            await self.base_transport.aclose()
 
 
 class HttpxSyncSnapshotClient:
@@ -74,7 +80,7 @@ class HttpxSyncSnapshotClient:
         self.serializer_options = serializer_options or SnapshotSerializerOptions()
         self.base_transport = base_transport or httpx.HTTPTransport()
         self._client: Optional[httpx.Client] = None
-        self._transport: Optional[Any] = None
+        self._transport: Optional["SyncSnapshotTransport"] = None
 
     def __enter__(self) -> httpx.Client:
         from ._integrations._httpx import SyncSnapshotTransport
@@ -103,3 +109,4 @@ class HttpxSyncSnapshotClient:
                 self._client.close()
             if self._transport:
                 self._transport.close()
+            self.base_transport.close()
