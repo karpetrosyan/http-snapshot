@@ -1,3 +1,12 @@
+## [0.1.7] - 2026-02-19
+
+### 🚀 Features
+
+- Deprecate pytest fixtures, introduce context managers
+
+### ⚙️ Miscellaneous Tasks
+
+- Set --latest flag for publishing in git cliff
 ## [0.1.6] - 2025-12-16
 
 ### 🐛 Bug Fixes
