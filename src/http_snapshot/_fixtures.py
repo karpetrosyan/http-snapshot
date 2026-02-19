@@ -1,4 +1,5 @@
 from typing import Any, Iterator, cast
+import warnings
 import httpx
 import pytest
 import inline_snapshot
@@ -32,6 +33,13 @@ try:
         http_snapshot_serializer_options: SnapshotSerializerOptions,
         is_recording: bool,
     ) -> Iterator[httpx.AsyncClient]:
+        warnings.warn(
+            "snapshot_async_httpx_client fixture is deprecated. "
+            "Use HttpxAsyncSnapshotClient context manager instead: "
+            "async with HttpxAsyncSnapshotClient(snapshot=http_snapshot, is_recording=is_recording) as client: ...",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         from ._integrations._httpx import AsyncSnapshotTransport
 
         snapshot_transport = AsyncSnapshotTransport(
@@ -39,17 +47,22 @@ try:
             http_snapshot,
             is_recording=is_recording,
         )
-        yield httpx.AsyncClient(
-            transport=snapshot_transport,
-        )
 
-        if snapshot_transport.is_recording:
-            assert (
-                internal_to_snapshot(
-                    snapshot_transport.collected_pairs, http_snapshot_serializer_options
-                )
-                == snapshot_transport.snapshot
+        try:
+            yield httpx.AsyncClient(
+                transport=snapshot_transport,
             )
+
+            if snapshot_transport.is_recording:
+                assert (
+                    internal_to_snapshot(
+                        snapshot_transport.collected_pairs,
+                        http_snapshot_serializer_options,
+                    )
+                    == snapshot_transport.snapshot
+                )
+        finally:
+            pass
 
     @pytest.fixture
     def snapshot_sync_httpx_client(
@@ -57,6 +70,13 @@ try:
         http_snapshot_serializer_options: SnapshotSerializerOptions,
         is_recording: bool,
     ) -> Iterator[httpx.Client]:
+        warnings.warn(
+            "snapshot_sync_httpx_client fixture is deprecated. "
+            "Use HttpxSyncSnapshotClient context manager instead: "
+            "with HttpxSyncSnapshotClient(snapshot=http_snapshot, is_recording=is_recording) as client: ...",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if httpx is None:
             raise ImportError(
                 "httpx is not installed. Please install http-snapshot with httpx feature [pip install http-snapshot[httpx]]"
@@ -68,17 +88,21 @@ try:
             http_snapshot,
             is_recording=is_recording,
         )
-        yield httpx.Client(
-            transport=snapshot_transport,
-        )
-
-        if snapshot_transport.is_recording:
-            assert (
-                internal_to_snapshot(
-                    snapshot_transport.collected_pairs, http_snapshot_serializer_options
-                )
-                == snapshot_transport.snapshot
+        try:
+            yield httpx.Client(
+                transport=snapshot_transport,
             )
+
+            if snapshot_transport.is_recording:
+                assert (
+                    internal_to_snapshot(
+                        snapshot_transport.collected_pairs,
+                        http_snapshot_serializer_options,
+                    )
+                    == snapshot_transport.snapshot
+                )
+        finally:
+            snapshot_transport.close()
 except ImportError:
 
     @pytest.fixture
@@ -111,6 +135,13 @@ try:
         http_snapshot_serializer_options: SnapshotSerializerOptions,
         is_recording: bool,
     ) -> Iterator[requests.Session]:
+        warnings.warn(
+            "snapshot_requests_session fixture is deprecated. "
+            "Use RequestsSnapshotSession context manager instead: "
+            "with RequestsSnapshotSession(snapshot=http_snapshot, is_recording=is_recording) as session: ...",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         from ._integrations._requests import SnapshotAdapter
 
         with requests.Session() as session:

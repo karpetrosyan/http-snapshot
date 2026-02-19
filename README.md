@@ -32,7 +32,79 @@ pip install http-snapshot[httpx,requests]
 
 ## Quick Start
 
-### Using with httpx (async)
+### Using Context Managers (Recommended)
+
+The context manager API provides proper resource cleanup and doesn't require any additional dependencies.
+
+#### Using with httpx (async)
+
+```python
+import pytest
+import inline_snapshot
+from http_snapshot.httpx import HttpxAsyncSnapshotClient
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "http_snapshot",
+    [inline_snapshot.external("uuid:my-test-snapshot.json")],
+)
+async def test_api_call(http_snapshot, is_recording: bool) -> None:
+    async with HttpxAsyncSnapshotClient(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+    ) as client:
+        response = await client.get("https://api.example.com/users")
+        assert response.status_code == 200
+        assert "users" in response.json()
+```
+
+#### Using with httpx (sync)
+
+```python
+import pytest
+import inline_snapshot
+from http_snapshot.httpx import HttpxSyncSnapshotClient
+
+@pytest.mark.parametrize(
+    "http_snapshot",
+    [inline_snapshot.external("uuid:my-test-snapshot.json")],
+)
+def test_api_call(http_snapshot, is_recording: bool) -> None:
+    with HttpxSyncSnapshotClient(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+    ) as client:
+        response = client.get("https://api.example.com/users")
+        assert response.status_code == 200
+        assert "users" in response.json()
+```
+
+#### Using with requests (sync)
+
+```python
+import pytest
+import inline_snapshot
+from http_snapshot.requests import RequestsSnapshotSession
+
+@pytest.mark.parametrize(
+    "http_snapshot",
+    [inline_snapshot.external("uuid:my-test-snapshot.json")],
+)
+def test_api_call(http_snapshot, is_recording: bool) -> None:
+    with RequestsSnapshotSession(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+    ) as session:
+        response = session.get("https://api.example.com/users")
+        assert response.status_code == 200
+        assert "users" in response.json()
+```
+
+### Using with pytest fixtures (Deprecated)
+
+> **Note**: The pytest fixture API is deprecated. Please use the context manager API shown above instead.
+
+#### Using with httpx (async)
 
 ```python
 import httpx
@@ -51,26 +123,25 @@ async def test_api_call(snapshot_async_httpx_client: httpx.AsyncClient) -> None:
     assert "users" in response.json()
 ```
 
-### Using with httpx (sync)
+#### Using with httpx (sync)
 
 ```python
 import httpx
 import pytest
 import inline_snapshot
 
-@pytest.mark.anyio
 @pytest.mark.parametrize(
     "http_snapshot",
     [inline_snapshot.external("uuid:my-test-snapshot.json")],
 )
 def test_api_call(snapshot_sync_httpx_client: httpx.Client) -> None:
     # This will be captured on first run, replayed on subsequent runs
-    response = snapshot_async_httpx_client.get("https://api.example.com/users")
+    response = snapshot_sync_httpx_client.get("https://api.example.com/users")
     assert response.status_code == 200
     assert "users" in response.json()
 ```
 
-### Using with requests (sync)
+#### Using with requests (sync)
 
 ```python
 import requests
@@ -87,6 +158,48 @@ def test_api_call(snapshot_requests_session: requests.Session) -> None:
     assert response.status_code == 200
     assert "users" in response.json()
 ```
+
+## Migration Guide
+
+If you're currently using the deprecated pytest fixtures, here's how to migrate to the context manager API:
+
+### Before (using fixtures):
+
+```python
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "http_snapshot",
+    [inline_snapshot.external("uuid:test.json")],
+)
+async def test_api(snapshot_async_httpx_client: httpx.AsyncClient):
+    await snapshot_async_httpx_client.get("https://example.com")
+```
+
+### After (using context managers):
+
+```python
+from http_snapshot.httpx import HttpxAsyncSnapshotClient
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "http_snapshot",
+    [inline_snapshot.external("uuid:test.json")],
+)
+async def test_api(http_snapshot, is_recording: bool):
+    async with HttpxAsyncSnapshotClient(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+    ) as client:
+        await client.get("https://example.com")
+```
+
+### Key differences:
+
+1. **Import the context manager**: Instead of relying on pytest fixtures, import the context manager class
+2. **Use context manager syntax**: Use `async with` (for async) or `with` (for sync)
+3. **Pass parameters explicitly**: `snapshot` and `is_recording` are now constructor parameters
+4. **Add `is_recording` fixture**: The `is_recording` pytest fixture is still available and works the same way
+5. **No additional dependencies needed**: Unlike the fixtures which had async teardown issues, context managers work without pytest-asyncio
 
 ## How It Works
 
@@ -105,10 +218,41 @@ pytest tests/
 
 You can customize what gets captured using `SnapshotSerializerOptions`:
 
+### Using with context managers:
+
 ```python
 import pytest
 import inline_snapshot
-from http_snapshot._serializer import SnapshotSerializerOptions
+from http_snapshot.requests import RequestsSnapshotSession, SnapshotSerializerOptions
+
+@pytest.mark.parametrize(
+    "http_snapshot",
+    [inline_snapshot.external("uuid:my-test-snapshot.json")],
+)
+def test_with_custom_options(http_snapshot, is_recording: bool) -> None:
+    serializer_options = SnapshotSerializerOptions(
+        exclude_request_headers=["X-API-Key"],
+        include_request=True,
+    )
+
+    with RequestsSnapshotSession(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+        serializer_options=serializer_options,
+    ) as session:
+        response = session.get(
+            "https://api.example.com/protected",
+            headers={"X-API-Key": "secret-key"}
+        )
+        assert response.status_code == 200
+```
+
+### Using with fixtures (deprecated):
+
+```python
+import pytest
+import inline_snapshot
+from http_snapshot import SnapshotSerializerOptions
 
 @pytest.mark.parametrize(
     "http_snapshot, http_snapshot_serializer_options",
@@ -117,7 +261,7 @@ from http_snapshot._serializer import SnapshotSerializerOptions
             inline_snapshot.external("uuid:my-test-snapshot.json"),
             SnapshotSerializerOptions(
                 exclude_request_headers=["X-API-Key"],
-                include_request=True,  # Include request details in snapshot
+                include_request=True,
             ),
         ),
     ],
@@ -203,50 +347,56 @@ The plugin intelligently handles different content types:
 ### Testing API with Multiple Requests
 
 ```python
+from http_snapshot.httpx import HttpxAsyncSnapshotClient
+
 @pytest.mark.anyio
 @pytest.mark.parametrize(
     "http_snapshot",
     [inline_snapshot.external("uuid:multi-request-test.json")],
 )
-async def test_multiple_requests(snapshot_async_httpx_client: httpx.AsyncClient) -> None:
-    # Create a user
-    create_response = await snapshot_async_httpx_client.post(
-        "https://api.example.com/users",
-        json={"name": "Alice", "email": "alice@example.com"}
-    )
-    assert create_response.status_code == 201
-    user_id = create_response.json()["id"]
+async def test_multiple_requests(http_snapshot, is_recording: bool) -> None:
+    async with HttpxAsyncSnapshotClient(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+    ) as client:
+        create_response = await client.post(
+            "https://api.example.com/users",
+            json={"name": "Alice", "email": "alice@example.com"}
+        )
+        assert create_response.status_code == 201
+        user_id = create_response.json()["id"]
 
-    # Fetch the user
-    get_response = await snapshot_async_httpx_client.get(
-        f"https://api.example.com/users/{user_id}"
-    )
-    assert get_response.status_code == 200
-    assert get_response.json()["name"] == "Alice"
+        get_response = await client.get(
+            f"https://api.example.com/users/{user_id}"
+        )
+        assert get_response.status_code == 200
+        assert get_response.json()["name"] == "Alice"
 ```
 
 ### Testing with Authentication
 
 ```python
+from http_snapshot.requests import RequestsSnapshotSession, SnapshotSerializerOptions
+
 @pytest.mark.parametrize(
-    "http_snapshot, http_snapshot_serializer_options",
-    [
-        (
-            inline_snapshot.external("uuid:auth-test.json"),
-            SnapshotSerializerOptions(exclude_request_headers=["Authorization"]),
-        ),
-    ],
+    "http_snapshot",
+    [inline_snapshot.external("uuid:auth-test.json")],
 )
-def test_authenticated_request(
-    snapshot_requests_session: requests.Session,
-    http_snapshot_serializer_options,
-) -> None:
-    # The Authorization header will be excluded from the snapshot
-    response = snapshot_requests_session.get(
-        "https://api.example.com/profile",
-        headers={"Authorization": "Bearer secret-token"}
+def test_authenticated_request(http_snapshot, is_recording: bool) -> None:
+    serializer_options = SnapshotSerializerOptions(
+        exclude_request_headers=["Authorization"]
     )
-    assert response.status_code == 200
+
+    with RequestsSnapshotSession(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+        serializer_options=serializer_options,
+    ) as session:
+        response = session.get(
+            "https://api.example.com/profile",
+            headers={"Authorization": "Bearer secret-token"}
+        )
+        assert response.status_code == 200
 ```
 
 ## Best Practices
