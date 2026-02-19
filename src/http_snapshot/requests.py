@@ -39,7 +39,7 @@ class RequestsSnapshotSession:
 
         return self._session
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         try:
             if self._adapter and self._adapter.is_recording:
                 assert (

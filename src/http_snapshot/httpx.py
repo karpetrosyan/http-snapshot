@@ -44,7 +44,7 @@ class HttpxAsyncSnapshotClient:
         self._client = httpx.AsyncClient(transport=self._transport)
         return self._client
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         try:
             if self._transport and self._transport.is_recording:
                 assert (
@@ -88,7 +88,7 @@ class HttpxSyncSnapshotClient:
         self._client = httpx.Client(transport=self._transport)
         return self._client
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         try:
             if self._transport and self._transport.is_recording:
                 assert (
