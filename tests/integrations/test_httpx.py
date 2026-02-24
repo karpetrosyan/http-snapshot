@@ -1,8 +1,10 @@
-import httpx
+from typing import Any
+
 import inline_snapshot
 import pytest
 
 from http_snapshot._serializer import SnapshotSerializerOptions
+from http_snapshot.httpx import HttpxAsyncSnapshotClient, HttpxSyncSnapshotClient
 
 
 @pytest.mark.anyio
@@ -10,8 +12,16 @@ from http_snapshot._serializer import SnapshotSerializerOptions
     "http_snapshot",
     [inline_snapshot.external("uuid:01c2382a-2b15-45bd-8f4e-f012b5bfebaa.json")],
 )
-async def test_basic_snapshot(snapshot_async_httpx_client: httpx.AsyncClient) -> None:
-    await snapshot_async_httpx_client.get("https://hishel.com")
+async def test_basic_snapshot(
+    http_snapshot: inline_snapshot.Snapshot[Any],
+    http_snapshot_serializer_options: SnapshotSerializerOptions,
+    is_recording: bool,
+) -> None:
+    async with HttpxAsyncSnapshotClient(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+    ) as client:
+        await client.get("https://hishel.com")
 
 
 @pytest.mark.anyio
@@ -25,20 +35,34 @@ async def test_basic_snapshot(snapshot_async_httpx_client: httpx.AsyncClient) ->
     ],
 )
 async def test_with_excluded_request_header(
-    snapshot_async_httpx_client: httpx.AsyncClient,
+    http_snapshot: inline_snapshot.Snapshot[Any],
+    http_snapshot_serializer_options: SnapshotSerializerOptions,
+    is_recording: bool,
 ) -> None:
-    await snapshot_async_httpx_client.get(
-        "https://jsonplaceholder.typicode.com/todos/1",
-        headers={"X-Secret-Key": "secret"},
-    )
+    async with HttpxAsyncSnapshotClient(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+    ) as client:
+        await client.get(
+            "https://jsonplaceholder.typicode.com/todos/1",
+            headers={"X-Secret-Key": "secret"},
+        )
 
 
 @pytest.mark.parametrize(
     "http_snapshot",
     [inline_snapshot.external("uuid:55be68a6-0264-48c5-9caa-d243f3361b89.json")],
 )
-def test_basic_sync_snapshot(snapshot_sync_httpx_client: httpx.Client) -> None:
-    resp = snapshot_sync_httpx_client.get("https://hishel.com")
+def test_basic_sync_snapshot(
+    http_snapshot: inline_snapshot.Snapshot[Any],
+    http_snapshot_serializer_options: SnapshotSerializerOptions,
+    is_recording: bool,
+) -> None:
+    with HttpxSyncSnapshotClient(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+    ) as client:
+        resp = client.get("https://hishel.com")
 
     assert resp.status_code == 200
 
@@ -53,9 +77,15 @@ def test_basic_sync_snapshot(snapshot_sync_httpx_client: httpx.Client) -> None:
     ],
 )
 def test_sync_with_excluded_request_header(
-    snapshot_sync_httpx_client: httpx.Client,
+    http_snapshot: inline_snapshot.Snapshot[Any],
+    http_snapshot_serializer_options: SnapshotSerializerOptions,
+    is_recording: bool,
 ) -> None:
-    snapshot_sync_httpx_client.get(
-        "https://jsonplaceholder.typicode.com/todos/1",
-        headers={"X-Secret-Key": "secret"},
-    )
+    with HttpxSyncSnapshotClient(
+        snapshot=http_snapshot,
+        is_recording=is_recording,
+    ) as client:
+        client.get(
+            "https://jsonplaceholder.typicode.com/todos/1",
+            headers={"X-Secret-Key": "secret"},
+        )
